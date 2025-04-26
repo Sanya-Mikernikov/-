@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="logo.png" type="image/png">
+    <title>Главная страница</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            scroll-behavior: smooth; /* Плавный скролл */
+        }
+
+        .header {
+            background: linear-gradient(to right, #00aaff, #00ff88); /* Градиент от голубого к зеленому */
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            color: white;
+        }
+
+        .header .button {
+            margin: 0 10px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: white;
+            color: #00aaff;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        .header .button:hover {
+            background-color: #e0e0e0;
+        }
+
+        .section {
+            padding: 50px;
+            text-align: justify;
+            height: 30vh; /* Высота секции на весь экран */
+            overflow: auto;
+        }
+
+        .section:nth-child(even) {
+            background-color: #f9f9f9; /* Светлый фон для четных секций */
+        }
+
+        .section:nth-child(odd) {
+            background-color: #ffffff; /* Белый фон для нечетных секций */
+        }
+        
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <button class="button" onclick="scrollToSection('section1')">Команда проекта</button>
+        <button class="button" onclick="scrollToSection('section2')">Анализ решений</button>
+        <button class="button" onclick="scrollToSection('section3')">Выводы</button>
+        <button class="button" onclick="scrollToSection('section4')">План работы</button>
+        <button class="button" onclick="scrollToSection('section5')">Ошибки и исправления</button>
+        <button class="button" onclick="scrollToSection('section6')">Преимущества</button>
+        <button class="button" onclick="window.location.href='canvas.html'">Перейти к Canvas</button>
+    </div>
+    <div id="section1" class="section">
+        <h2>Команда проекта</h2>
+        <p>Государственное бюджетное общеобразовательное учреждение города Москвы "Школа № 1363"</p>
+        <p>Тип работы: Проект</p>
+        <p>ФИО: Иванов Юрий Игоревич</p>
+        <p>ОУ и класс / организация и должность: ГБОУ Школа № 1363, учитель</p>
+        <p>Функция в проекте: Руководитель</p>
+        <p>Задачи в проекте:</p>
+        <ul>
+            <li>Организация работы проектной команды.</li>
+            <li>Научное сопровождение.</li>
+            <li>Контроль тестирования программы.</li>
+            <li>Помощь в реализации идей.</li>
+        </ul>
+        <p>ФИО: Микерников Александр</p>
+        <p>ОУ и класс / организация и должность: Учащийся 8Б класса</p>
+        <p>Функция в проекте: Программист, Контент-менеджер</p>
+        <p>Задачи в проекте:</p>
+        <ul>
+            <li>Поиск информации.</li>
+            <li>Анализ решений.</li>
+            <li>Написание кода.</li>
+            <li>Тестирование и отладка.</li>
+            <li>Подбор материала для презентации.</li>
+        </ul>
+    </div>
+
+    <div id="section2" class="section">
+        <h2>Анализ решений</h2>
+        <p>Google Jamboard</p>
+        <p>Преимущества:</p>
+        <ul>
+            <li>Простой интерфейс;</li>
+            <li>Удобно и быстро создавать заметки;</li>
+            <li>Синхронизация с Google;</li>
+            <li>Удобная навигация;</li>
+            <li>Сохранение в формате слайдов;</li>
+            <li>Не требует установки;</li>
+        </ul>
+        <p>Недостатки:</p>
+        <ul>
+            <li>Перестал поддерживать вообще;</li>
+            <li>Ограничения количества слайдов;</li>
+            <li>Нельзя загружать презентации.</li>
+        </ul>
+        <p>Open Board</p>
+        <p>Преимущества:</p>
+        <ul>
+            <li>Работа без Интернета;</li>
+            <li>Много функций;</li>
+            <li>Возможность сохранять слайды и скриншоты;</li>
+            <li>Возможность создавать много слайдов.</li>
+        </ul>
+        <p>Недостатки:</p>
+        <ul>
+            <li>Разный интерфейс на Linux и Windows;</li>
+            <li>Не всегда удобно делать заметки;</li>
+            <li>Долгое переключение между решениями;</li>
+            <li>Требуется установка на компьютер.</li>
+        </ul>
+    </div>
+
+    <div id="section3" class="section">
+        <h2>Выводы</h2>
+        <p>Проанализировав приведенные выше решения, было принято решение создать что-то подобное. Данный продукт сможет помочь учителю делать быстрые заметки и сэкономить время при объяснении материала.</p>
+    </div>
+
+    <div id="section4" class="section">
+        <h2>План работы</h2>
+        <ul>
+            <li>Сбор информации.</li>
+            <li>Разработка программного продукта.</li>
+            <li>Отладка и тестирование.</li>
+        </ul>
+    </div>
+
+    <div id="section5" class="section">
+        <h2>Ошибки и исправления</h2>
+        <p>Дата: Ноябрь</p>
+        <p>Ошибки в программе: Сложности с созданием слайдов для заметок.</p>
+        <p>Статус: Исправлено.</p>
+        <p>Дата: Декабрь</p>
+        <p>Ошибки в программе: Проблемы с рисованием и сохранением заметок при перемещении по слайдам.</p>
+        <p>Статус: Исправлено.</p>
+        <p>Дата: Январь</p>
+        <p>Ошибки в программе: Обработка событий нажатия кнопок.</p>
+        <p>Статус: Исправлено.</p>
+    </div>
+
+    <div id="section6" class="section">
+        <h2>Преимущества нашей программы</h2>
+        <ul>
+            <li>Проект может работать автономно;</li>
+            <li>Простой и понятный интерфейс;</li>
+            <li>Проект работает на разных ОС;</li>
+            <li>Добавление дополнительных функций;</li>
+            <li>Адаптирование интерфейса для образовательного процесса.</li>
+        </ul>
+    </div>
+
+    <script>
+        function scrollToSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            section.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

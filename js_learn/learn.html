@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brush&Canvas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+
+        .sidebar {
+            width: 300px;
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            margin: 20px;
+            overflow-y: auto;
+            max-height: calc(100vh - 40px);
+        }
+
+        .container {
+            text-align: center;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+            max-width: 100%;
+            max-height: calc(100vh - 40px);
+        }
+
+        canvas {
+            border: 1px solid black;
+            background-color: white;
+            margin-bottom: 20px;
+            touch-action: none;
+            border-radius: 20px;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.005px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 20px;
+            cursor: pointer;
+            border: none;
+            background-color: grey;
+            color: white;
+            border-radius: 5px;
+            width: 100%;
+            margin-bottom: 5px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button.active {
+            background-color: #0056b3;
+        }
+
+        .tools {
+            margin-bottom: 20px;
+            margin-top: 15px;
+            gap: 0.1px;
+        }
+
+        .tools label {
+            margin-right: 10px;
+        }
+
+        .tools input[type="color"] {
+            vertical-align: middle;
+        }
+
+        .tools input[type="range"] {
+            width: 100px;
+        }
+
+        .timer {
+            text-align: center;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            font-size: 20px;
+        }
+
+        .file-viewer {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            overflow-y: auto;
+            max-height: 300px;
+        }
+
+        .file-viewer img {
+            max-width: 100px;
+            margin: 5px;
+            cursor: pointer;
+        }
+
+        .file-viewer h3 {
+            margin: 0;
+        }
+
+        .file-input {
+            margin-bottom: 10px;
+        }
+
+        .slide-indicator {
+            margin-top: 10px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .file-input-container {
+            margin-bottom: 15px;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .point-marker {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: red;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .canvas-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .drawing-modes {
+            margin-top: 15px;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h3>Инструменты рисования</h3>
+        <div class="tools">
+            <label for="colorPicker">Цвет маркера:</label>
+            <input type="color" id="colorPicker" value="#000000">
+            <label for="lineWidth">Толщина линии:</label>
+            <input type="range" id="lineWidth" min="1" max="50" value="5">
+            <span id="lineWidthValue">5</span>
+            <button id="grid">Сетка</button>
+            <button id="clearCanvas">Очистить слайд</button>
+            <button id="fillColor">Залить цветом</button>
+            <button id="toggleRuler">Включить линейку</button>
+            <div class="drawing-modes">
+                <h4>Режимы рисования</h4>
+                <button id="freehandMode" class="mode-button active">Свободная линия</button>
+                <button id="connectPointsMode" class="mode-button">Соединение точек</button>
+            </div>
+        </div>
+        <div class="controls">
+            <h4>Управление слайдами</h4>
+            <button id="prevSlide">Предыдущий слайд</button>
+            <button id="nextSlide">Следующий слайд</button>
+            <button id="addSlide">Добавить слайд</button>
+            <button id="deleteSlide">Удалить слайд</button>
+            <button id="screenshot">Сделать снимок экрана</button>
+            <input type="file" id="studentsFile" accept=".txt" class="file-input" />
+            <button id="randomStudent">Выбрать случайного ученика</button>
+        </div>
+    </div>
+    <div class="container">
+        <div class="resolution-selector">
+            <label for="canvasResolution">Размер холста:</label>
+            <select id="canvasResolution">
+                <option value="800x480">800x480</option>
+                <option value="800x580">800x580</option>
+                <option value="960x540">960x540</option>
+                <option value="1024x768">1024x768</option>
+                <option value="1280x720">1280x720</option>
+                <option value="1920x1280">1920x1280</option>
+                <option value="2900x1800">2900x1800</option>
+                <option value="350x170">350x170</option>
+            </select>
+        </div>
+        <div class="slides">
+            <div class="slide-indicator">Слайд: <span id="currentSlideNumber">1</span> / <span id="totalSlides">1</span></div>
+            <div id="canvasContainer" class="canvas-container">
+                <canvas id="drawingCanvas" width="800" height="580"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="sidebar">
+        <h3>Управление файлами</h3>
+        <div class="file-input-container">
+            <h3>Просмотр изображений</h3>
+            <input type="file" id="folderInput" webkitdirectory multiple class="file-input" />
+        </div>
+        <div class="file-viewer">
+            <div id="imageContainer"></div>
+        </div>
+        <div class="timer">
+            <h1 id="time">00:00:00</h1>
+            <button id="startBtn">Старт</button>
+            <button id="stopBtn">Стоп</button>
+            <button id="resetBtn">Сброс</button>
+        </div>
+    </div>
+    <script>
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        const canvasContainer = document.getElementById('canvasContainer');
+        const prevSlideButton = document.getElementById('prevSlide');
+        const nextSlideButton = document.getElementById('nextSlide');
+        const clearCanvasButton = document.getElementById('clearCanvas');
+        const addSlideButton = document.getElementById('addSlide');
+        const deleteSlideButton = document.getElementById('deleteSlide');
+        const colorPicker = document.getElementById('colorPicker');
+        const lineWidth = document.getElementById('lineWidth');
+        const lineWidthValue = document.getElementById('lineWidthValue');
+        const canvasResolution = document.getElementById('canvasResolution');
+        const gridButton = document.getElementById('grid');
+        const screenshotButton = document.getElementById('screenshot');
+        const fillColorButton = document.getElementById('fillColor');
+        const folderInput = document.getElementById('folderInput');
+        const imageContainer = document.getElementById('imageContainer');
+        const timeDisplay = document.getElementById('time');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const currentSlideNumber = document.getElementById('currentSlideNumber');
+        const totalSlides = document.getElementById('totalSlides');
+        const toggleRulerButton = document.getElementById('toggleRuler');
+        const freehandModeButton = document.getElementById('freehandMode');
+        const connectPointsModeButton = document.getElementById('connectPointsMode');
+
+        let isDrawing = false;
+        let slides = [];
+        let currentSlideIndex = 0;
+        let startX, startY;
+        let drawLinesMode = false;
+        let isRulerEnabled = false;
+        let students = [];
+        let timer;
+        let seconds = 0;
+        let isRunning = false;
+        let currentMode = 'freehand';
+        let points = [];
+        let pointMarkers = [];
+
+        slides.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+
+        ctx.strokeStyle = colorPicker.value;
+        ctx.lineWidth = lineWidth.value;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        lineWidthValue.textContent = lineWidth.value;
+
+        function showSlide(index) {
+            if (index >= 0 && index < slides.length) {
+                ctx.putImageData(slides[index], 0, 0);
+                currentSlideIndex = index;
+                updateSlideIndicator();
+            }
+        }
+
+        function updateSlideIndicator() {
+            currentSlideNumber.textContent = currentSlideIndex + 1;
+            totalSlides.textContent = slides.length;
+        }
+        function addPointMarker(x, y) {
+            const marker = document.createElement('div');
+            marker.className = 'point-marker';
+            marker.style.left = x + 'px';
+            marker.style.top = y + 'px';
+            canvasContainer.appendChild(marker);
+            pointMarkers.push(marker);
+            return marker;
+        }
+        function clearPointMarkers() {
+            pointMarkers.forEach(marker => {
+                if (marker && marker.parentNode) {
+                    marker.parentNode.removeChild(marker);
+                }
+            });
+            pointMarkers = [];
+        }
+        function applyRuler(startX, startY, endX, endY) {
+            if (!isRulerEnabled) {
+                return { x: endX, y: endY };
+            }          
+            const deltaX = Math.abs(endX - startX);
+            const deltaY = Math.abs(endY - startY);
+            if (Math.abs(deltaX - deltaY) < Math.min(deltaX, deltaY) * 0.3) {
+                const newX = endX > startX ? startX + deltaY : startX - deltaY;
+                const newY = endY > startY ? startY + deltaX : startY - deltaX;
+                return { x: newX, y: newY };
+            } else if (deltaX > deltaY) {
+                return { x: endX, y: startY };
+            } else {
+                return { x: startX, y: endY };
+            }
+        }
+
+        function startDrawing(e) {
+            if (currentMode === 'freehand') {
+                isDrawing = true;
+                startX = e.offsetX;
+                startY = e.offsetY;
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+            } else if (currentMode === 'connectPoints') {
+                const x = e.offsetX;
+                const y = e.offsetY;
+                if (points.length > 2) {
+                    const firstPoint = points[0];
+                    const distance = Math.sqrt(
+                        Math.pow(firstPoint.x - x, 2) + 
+                        Math.pow(firstPoint.y - y, 2)
+                    );
+                    
+                    if (distance < 20) {
+                        ctx.beginPath();
+                        ctx.moveTo(points[points.length - 1].x, points[points.length - 1].y);
+                        ctx.lineTo(firstPoint.x, firstPoint.y);
+                        ctx.stroke();
+                        slides[currentSlideIndex] = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        points = [];
+                        clearPointMarkers();
+                        return;
+                    }
+                }
+                points.push({ x, y });
+                addPointMarker(x, y);
+                if (points.length > 1) {
+                    const prevPoint = points[points.length - 2];
+                    const currentPoint = points[points.length - 1];
+                    let adjustedPoint = currentPoint;
+                    if (isRulerEnabled) {
+                        adjustedPoint = applyRuler(prevPoint.x, prevPoint.y, currentPoint.x, currentPoint.y);
+                        points[points.length - 1] = adjustedPoint;
+                        const marker = pointMarkers[pointMarkers.length - 1];
+                        marker.style.left = adjustedPoint.x + 'px';
+                        marker.style.top = adjustedPoint.y + 'px';
+                    }
+                    ctx.beginPath();
+                    ctx.moveTo(prevPoint.x, prevPoint.y);
+                    ctx.lineTo(adjustedPoint.x, adjustedPoint.y);
+                    ctx.stroke();
+                    slides[currentSlideIndex] = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                }
+            }
+        }
+
+        function draw(e) {
+            if (currentMode === 'freehand' && isDrawing) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.putImageData(slides[currentSlideIndex], 0, 0);
+                const mouseX = e.offsetX;
+                const mouseY = e.offsetY;
+                
+                if (isRulerEnabled) {
+                    const deltaX = Math.abs(mouseX - startX);
+                    const deltaY = Math.abs(mouseY - startY);
+                    if (Math.abs(deltaX - deltaY) < Math.min(deltaX, deltaY) * 0.3) {
+                        const newX = mouseX > startX ? startX + deltaY : startX - deltaY;
+                        const newY = mouseY > startY ? startY + deltaX : startY - deltaX;
+                        ctx.lineTo(newX, newY);
+                    } else if (deltaX > deltaY) {
+                        ctx.lineTo(mouseX, startY);
+                    } else {
+                        ctx.lineTo(startX, mouseY);
+                    }
+                } else {
+                    ctx.lineTo(mouseX, mouseY);
+                }
+                ctx.stroke();
+            }
+        }
+
+        function stopDrawing() {
+            if (currentMode === 'freehand' && isDrawing) {
+                isDrawing = false;
+                ctx.closePath();
+                slides[currentSlideIndex] = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            }
+        }
+        function setDrawingMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(mode + 'Mode').classList.add('active');
+            if (mode !== 'connectPoints') {
+                points = [];
+                clearPointMarkers();
+            }
+        }
+        freehandModeButton.addEventListener('click', () => setDrawingMode('freehand'));
+        connectPointsModeButton.addEventListener('click', () => setDrawingMode('connectPoints'));
+
+        toggleRulerButton.addEventListener('click', () => {
+            isRulerEnabled = !isRulerEnabled;
+            toggleRulerButton.textContent = isRulerEnabled ? 'Выключить линейку' : 'Включить линейку';
+            if (currentMode === 'connectPoints' && points.length > 1) {
+                const firstPoint = points[0];
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.putImageData(slides[currentSlideIndex], 0, 0);
+                clearPointMarkers();
+                addPointMarker(firstPoint.x, firstPoint.y);
+                let prevPoint = firstPoint;
+                for (let i = 1; i < points.length; i++) {
+                    let currentPoint = points[i];
+                    if (isRulerEnabled) {
+                        currentPoint = applyRuler(prevPoint.x, prevPoint.y, currentPoint.x, currentPoint.y);
+                        points[i] = currentPoint;
+                    }
+                    addPointMarker(currentPoint.x, currentPoint.y);
+                    ctx.beginPath();
+                    ctx.moveTo(prevPoint.x, prevPoint.y);
+                    ctx.lineTo(currentPoint.x, currentPoint.y);
+                    ctx.stroke();
+                    
+                    prevPoint = currentPoint;
+                }
+                slides[currentSlideIndex] = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            }
+        });
+
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const offsetX = touch.clientX - rect.left;
+            const offsetY = touch.clientY - rect.top;
+            
+            if (currentMode === 'freehand') {
+                startDrawing({
+                    offsetX: offsetX,
+                    offsetY: offsetY
+                });
+            } else if (currentMode === 'connectPoints') {
+                startDrawing({
+                    offsetX: offsetX,
+                    offsetY: offsetY
+                });
+            }
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            draw({
+                offsetX: touch.clientX - rect.left,
+                offsetY: touch.clientY - rect.top
+            });
+        });
+
+        canvas.addEventListener('touchend', stopDrawing);
+
+        clearCanvasButton.addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            slides[currentSlideIndex] = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            points = [];
+            clearPointMarkers();
+        });
+
+        prevSlideButton.addEventListener('click', () => {
+            if (currentSlideIndex > 0) {
+                points = [];
+                clearPointMarkers();
+                showSlide(currentSlideIndex - 1);
+            }
+        });
+
+        nextSlideButton.addEventListener('click', () => {
+            if (currentSlideIndex < slides.length - 1) {
+                points = [];
+                clearPointMarkers();
+                showSlide(currentSlideIndex + 1);
+            }
+        });
+
+        addSlideButton.addEventListener('click', () => {
+            points = [];
+            clearPointMarkers();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            slides.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+            currentSlideIndex = slides.length - 1;
+            updateSlideIndicator();
+        });
+
+        deleteSlideButton.addEventListener('click', () => {
+            if (slides.length > 1) {
+                points = [];
+                clearPointMarkers();
+                slides.splice(currentSlideIndex, 1);
+                currentSlideIndex = Math.max(0, currentSlideIndex - 1);
+                showSlide(currentSlideIndex);
+            }
+        });
+
+        colorPicker.addEventListener('input', () => {
+            ctx.strokeStyle = colorPicker.value;
+        });
+
+        lineWidth.addEventListener('input', () => {
+            ctx.lineWidth = lineWidth.value;
+            lineWidthValue.textContent = lineWidth.value;
+        });
+
+        canvasResolution.addEventListener('change', () => {
+            const [width, height] = canvasResolution.value.split('x').map(Number);
+            canvas.width = width;
+            canvas.height = height;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            slides = [];
+            slides.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+            currentSlideIndex = 0;
+            updateSlideIndicator();
+            points = [];
+            clearPointMarkers();
+            ctx.strokeStyle = colorPicker.value;
+            ctx.lineWidth = lineWidth.value;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+        });
+
+        gridButton.addEventListener('click', () => {
+            const gridSize = 20;
+            ctx.strokeStyle = colorPicker.value;
+            ctx.lineWidth = 0.5;
+            ctx.beginPath();
+            for (let x = 0; x < canvas.width; x += gridSize) {
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+            }
+            for (let y = 0; y < canvas.height; y += gridSize) {
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+            }
+            ctx.stroke();
+            ctx.lineWidth = lineWidth.value;
+            slides[currentSlideIndex] = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        });
+
+        screenshotButton.addEventListener('click', () => {
+            const sessionNumber = new Date().getTime();
+            const link = document.createElement('a');
+            link.download = `screenshot_${sessionNumber}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+
+        fillColorButton.addEventListener('click', () => {
+            const fillColor = colorPicker.value;
+            ctx.fillStyle = fillColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            slides[currentSlideIndex] = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        });
+
+        folderInput.addEventListener('change', (e) => {
+            const files = e.target.files;
+
+            while (imageContainer.firstChild) {
+                imageContainer.removeChild(imageContainer.firstChild);
+            }
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (file.type.startsWith('image/')) {
+                    const img = document.createElement('img');
+                    img.src = URL.createObjectURL(file);
+                    img.alt = file.name;
+                    img.onload = () => {
+                        URL.revokeObjectURL(img.src);
+                    };
+                    img.style.cursor = 'pointer';
+                    img.addEventListener('click', () => {
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        slides[currentSlideIndex] = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    });
+                    imageContainer.appendChild(img);
+                }
+            }
+
+            folderInput.value = '';
+        });
+
+        document.getElementById('studentsFile').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const text = event.target.result;
+                    students = text.split('\n').map(name => name.trim()).filter(name => name);
+                    alert('Список учеников загружен.');
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        document.getElementById('randomStudent').addEventListener('click', () => {
+            if (students.length > 0) {
+                const randomIndex = Math.floor(Math.random() * students.length);
+                alert(`Случайный ученик: ${students[randomIndex]}`);
+            } else {
+                alert('Список учеников пуст. Пожалуйста, загрузите файл с именами.');
+            }
+        });
+
+        function updateDisplay() {
+            const hours = String(Math.floor(seconds / 3600)).padStart(2, '0');
+            const minutes = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+            const secs = String(seconds % 60).padStart(2, '0');
+            timeDisplay.textContent = `${hours}:${minutes}:${secs}`;
+        }
+
+        startBtn.addEventListener('click', () => {
+            if (!isRunning) {
+                isRunning = true;
+                timer = setInterval(() => {
+                    seconds++;
+                    updateDisplay();
+                }, 1000);
+            }
+        });
+
+        stopBtn.addEventListener('click', () => {
+            if (isRunning) {
+                clearInterval(timer);
+                isRunning = false;
+            }
+        });
+
+        resetBtn.addEventListener('click', () => {
+            clearInterval(timer);
+            isRunning = false;
+            seconds = 0;
+            updateDisplay();
+        });
+
+        updateDisplay();
+        updateSlideIndicator();
+    </script>
+</body>
+</html>

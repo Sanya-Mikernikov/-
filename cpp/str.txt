@@ -1,0 +1,108 @@
+В C++ строки могут быть представлены с помощью стандартного класса std::string, который является частью стандартной библиотеки. Этот класс предоставляет множество методов для работы со строками, включая создание, изменение, сравнение и манипуляцию строками. Давайте рассмотрим основные аспекты работы со строками в C++ и некоторые из наиболее часто используемых методов.
+
+Основные операции со строками
+Создание строк
+
+cpp
+Run
+Copy code
+#include <iostream>
+#include <string>
+
+int main() {
+    std::string str1; // Пустая строка
+    std::string str2 = "Hello, World!"; // Инициализация строкой
+    std::string str3("Hello, C++!"); // Конструктор
+    return 0;
+}
+Доступ к символам строки
+
+cpp
+Run
+Copy code
+char firstChar = str2[0]; // Доступ к первому символу
+char secondChar = str2.at(1); // Доступ к второму символу с проверкой границ
+Изменение строки
+
+cpp
+Run
+Copy code
+str1 = "Hello"; // Присваивание
+str1 += " World!"; // Конкатенация
+Методы класса std::string
+Вот некоторые из наиболее часто используемых методов класса std::string:
+
+length() и size()
+
+Возвращает длину строки.
+cpp
+Run
+Copy code
+size_t len = str2.length(); // или str2.size();
+empty()
+
+Проверяет, пуста ли строка.
+cpp
+Run
+Copy code
+if (str1.empty()) {
+    std::cout << "Строка пуста!" << std::endl;
+}
+append()
+
+Добавляет строку в конец текущей строки.
+cpp
+Run
+Copy code
+str1.append("!!!");
+insert()
+
+Вставляет строку в указанную позицию.
+cpp
+Run
+Copy code
+str1.insert(5, " C++"); // Вставляет " C++" после 5-го символа
+erase()
+
+Удаляет часть строки.
+cpp
+Run
+Copy code
+str1.erase(5, 6); // Удаляет 6 символов, начиная с 5-й позиции
+replace()
+
+Заменяет часть строки другой строкой.
+cpp
+Run
+Copy code
+str1.replace(0, 5, "Hi"); // Заменяет первые 5 символов на "Hi"
+substr()
+
+Возвращает подстроку.
+cpp
+Run
+Copy code
+std::string sub = str2.substr(0, 5); // Получает подстроку "Hello"
+find()
+
+Находит подстроку и возвращает индекс первого вхождения.
+cpp
+Run
+Copy code
+size_t pos = str2.find("World"); // Возвращает позицию "World"
+compare()
+
+Сравнивает строки.
+cpp
+Run
+Copy code
+if (str1.compare(str2) == 0) {
+    std::cout << "Строки равны!" << std::endl;
+}
+c_str()
+
+Возвращает указатель на C-строку (массив символов).
+cpp
+Run
+Copy code
+const char* cStr = str2.c_str();

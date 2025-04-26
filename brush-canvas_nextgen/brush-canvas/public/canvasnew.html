@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Brush&Canvas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        .sidebar {
+            width: 120px;
+            background-color: white;
+            padding: 15px 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            margin: 10px;
+            overflow-y: auto;
+            max-height: calc(100vh - 20px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            text-align: center;
+            background-color: white;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            margin: 10px 10px 10px 0;
+            overflow: hidden;
+        }
+        canvas {
+            border: 1px solid black;
+            background-color: white;
+            touch-action: none;
+            border-radius: 10px;
+            width: 100%;
+            height: 100%;
+            flex: 1;
+            min-height: 0;
+            display: block;
+        }
+        .tools {
+            margin-bottom: 15px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        .controls-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            margin-bottom: 10px;
+            width: 100%;
+        }
+        button {
+            padding: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            background-color: #f0f0f0;
+            color: #333;
+            border-radius: 5px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        button:hover {
+            background-color: #0056b3;
+            color: white;
+        }
+        button.active {
+            background-color: #0056b3;
+            color: white;
+        }
+        .slide-controls button {
+            width: 35px;
+            height: 35px;
+        }
+        .tools label {
+            font-size: 12px;
+            margin-bottom: 5px;
+            text-align: center;
+            width: 100%;
+        }
+        .tools input[type="color"] {
+            width: 40px;
+            height: 40px;
+            border: none;
+            cursor: pointer;
+        }
+        .tools input[type="range"] {
+            width: 100%;
+            margin: 5px 0;
+        }
+        .line-width-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        .line-width-value {
+            font-size: 12px;
+            margin-top: 3px;
+        }
+        .slide-indicator {
+            margin: 5px 0;
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+        }
+        .section-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            color: #666;
+            margin: 10px 0 5px 0;
+            text-align: center;
+            width: 100%;
+        }
+        .canvas-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            width: 100%;
+            position: relative;
+        }
+        .point-marker {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: red;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 100;
+        }
+        .slide {
+            transition: max-height 0.3s ease;
+            overflow: hidden;
+        }
+        .slide.collapsed {
+            max-height: 0;
+        }
+        .slide.expanded {
+            max-height: 1000px; /* Arbitrary large value */
+        }
+        .file-viewer {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+        .file-viewer h3 {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #333;
+        }
+        .file-viewer img {
+            max-width: 100%;
+            max-height: 100px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .file-viewer img:hover {
+            transform: scale(1.05);
+        }
+        .file-input-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .file-input-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #0056b3;
+        }
+        .file-input {
+            display: none;
+        }
+        .folder-icon {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+<div class="sidebar">
+    <div class="section-title">Инструменты</div>
+    <div class="tools">
+        <label for="colorPicker">Цвет</label>
+        <input type="color" id="colorPicker" value="#000000" title="Цвет маркера" />
+        <div class="line-width-container">
+            <label for="lineWidth">Толщина</label>
+            <input type="range" id="lineWidth" min="1" max="50" value="5" title="Толщина линии" />
+            <span class="line-width-value" id="lineWidthValue">5</span>
+        </div>
+        <button id="grid" title="Сетка"><i class="fas fa-th"></i></button>
+        <button id="drawLines" title="Рисовать линии"><i class="fas fa-ruler-combined"></i></button>
+        <button id="clearCanvas" title="Очистить слайд"><i class="fas fa-trash"></i></button>
+        <button id="fillColor" title="Залить цветом"><i class="fas fa-fill-drip"></i></button>
+        <div class="drawing-modes" style="margin-top:10px;">
+            <button id="freehandMode" class="mode-button active" title="Свободная линия"><i class="fas fa-pencil-alt"></i></button>
+            <button id="connectPointsMode" class="mode-button" title="Соединение точек"><i class="fas fa-link"></i></button>
+        </div>
+    </div>
+    <div class="section-title">Файлы</div>
+    <div class="file-input-container">
+        <label for="folderInput" class="file-input-label" title="Загрузить изображения">
+            <i class="fas fa-folder-open folder-icon"></i>
+        </label>
+        <input type="file" id="folderInput" webkitdirectory multiple class="file-input" />
+        <div class="file-viewer">
+            <h3>Изображения</h3>
+            <div id="imageContainer"></div>
+        </div>
+    </div>
+</div>
+<div class="container">
+    <div class="controls-row">
+        <div class="slide-indicator">Слайд: <span id="currentSlideNumber">1</span> / <span id="totalSlides">1</span></div>
+        <button id="prevSlide" title="Предыдущий слайд"><i class="fas fa-arrow-left"></i></button>
+        <button id="nextSlide" title="Следующий слайд"><i class="fas fa-arrow-right"></i></button>
+        <button id="addSlide" title="Добавить слайд"><i class="fas fa-plus"></i></button>
+        <button id="deleteSlide" title="Удалить слайд"><i class="fas fa-trash-alt"></i></button>
+        <button id="backupSlide" title="Создать резервную копию"><i class="fas fa-copy"></i></button>
+        <button id="restoreSlide" title="Восстановить резервную копию"><i class ="fas fa-undo"></i></button>
+        <button class="toggle-slide" title="Свернуть/Развернуть слайд"><i class="fas fa-chevron-up"></i></button>
+    </div>
+    <div class="canvas-container">
+        <div class="slide expanded" id="slide1">
+            <canvas id="drawingCanvas"></canvas>
+        </div>
+    </div>
+</div>
+<script>
+    const canvas = document.getElementById('drawingCanvas');
+    const ctx = canvas.getContext('2d');
+    const canvasContainer = document.querySelector('.canvas-container');
+    const prevSlideButton = document.getElementById('prevSlide');
+    const nextSlideButton = document.getElementById('nextSlide');
+    const addSlideButton = document.getElementById('addSlide');
+    const deleteSlideButton = document.getElementById('deleteSlide');
+    const backupSlideButton = document.getElementById('backupSlide');
+    const restoreSlideButton = document.getElementById('restoreSlide');
+    const colorPicker = document.getElementById('colorPicker');
+    const lineWidth = document.getElementById('lineWidth');
+    const lineWidthValue = document.getElementById('lineWidthValue');
+    const gridButton = document.getElementById('grid');
+    const drawLinesButton = document.getElementById('drawLines');
+    const clearCanvasButton = document.getElementById('clearCanvas');
+    const fillColorButton = document.getElementById('fillColor');
+    const currentSlideNumber = document.getElementById('currentSlideNumber');
+    const totalSlides = document.getElementById('totalSlides');
+    const freehandModeButton = document.getElementById('freehandMode');
+    const connectPointsModeButton = document.getElementById('connectPointsMode');
+    const toggleSlideButton = document.querySelector('.toggle-slide');
+    const slide = document.getElementById('slide1');
+
+    let isDrawing = false;
+    let slides = [];
+    let currentSlideIndex = 0;
+    let drawLinesMode = false;
+    let currentMode = 'freehand';
+    let points = [];
+    let pointMarkers = [];
+    let backupSlide = null;
+    let startX, startY;
+
+    function resizeCanvas() {
+        canvas.width = canvasContainer.clientWidth;
+        canvas.height = canvasContainer.clientHeight;
+        if (slides[currentSlideIndex]) {
+            ctx.putImageData(slides[currentSlideIndex], 0, 0);
+        }
+    }
+
+    window.addEventListener('load', () => {
+        resizeCanvas();
+        slides.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+        updateSlideIndicator();
+    });
+
+    window.addEventListener('resize', () => {
+        const currentImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        resizeCanvas();
+        ctx.putImageData(currentImage, 0, 0);
+        slides[currentSlideIndex] = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    });
+
+    folderInput.addEventListener('change', (e) => {
+        const files = e.target.files;
+        while (imageContainer.firstChild) {
+            imageContainer.removeChild(imageContainer.firstChild);
+        }
+        for (let file of files) {
+            if (file.type.startsWith('image/')) {
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                img.alt = file.name;
+                img.onload = () => URL.revokeObjectURL(img.src);
+                img.style.cursor = 'pointer';
+                img.addEventListener('click', () => {
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    slides[currentSlideIndex] = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                });
+                imageContainer.appendChild(img);
+            }
+        }
+        folderInput.value = '';
+    });
+
+    lineWidthValue.textContent = lineWidth.value;
+    lineWidth.addEventListener('input', () => {
+        ctx.lineWidth = lineWidth.value;
+        lineWidthValue.textContent = lineWidth.value;
+    });
+
+    colorPicker.addEventListener('input', () => {
+        ctx.strokeStyle = colorPicker.value;
+    });
+
+    function showSlide(index) {
+        if (index >= 0 && index < slides.length) {
+            ctx.putImageData(slides[index], 0, 0);
+            currentSlideIndex = index;
+            updateSlideIndicator();
+        }
+    }
+
+    function updateSlideIndicator() {
+        currentSlideNumber.textContent = currentSlideIndex + 1;
+        totalSlides.textContent = slides.length;
+    }
+
+    prevSlideButton.addEventListener('click', () => {
+        if (currentSlideIndex > 0) {
+            clearPoints();
+            showSlide(currentSlideIndex - 1);
+        }
+    });
+
+    nextSlideButton.addEventListener('click', () => {
+        if (currentSlideIndex < slides.length - 1) {
+            clearPoints();
+            showSlide(currentSlideIndex + 1);
+        }
+    });
+
+    addSlideButton.addEventListener('click', () => {
+        clearPoints();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        slides.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+        currentSlideIndex = slides.length - 1;
+        updateSlideIndicator();
+    });
+
+    deleteSlideButton.addEventListener('click', () => {
+        if (slides.length > 1) {
+            slides.splice(currentSlideIndex, 1);
+            currentSlideIndex = Math.max(0, currentSlideIndex - 1);
+            showSlide(currentSlideIndex);
+            updateSlideIndicator();
+        }
+    });
+
+    clearCanvasButton.addEventListener('click', () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        slides[currentSlideIndex] = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    });
+
+    fillColorButton.addEventListener('click', () => {
+        ctx.fillStyle = colorPicker.value;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        slides[currentSlideIndex] = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    });
+
+    gridButton.addEventListener('click', () => {
+        const gridSize = 20;
+        ctx.strokeStyle = colorPicker.value;
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        for (let x = 0; x < canvas.width; x += gridSize) {
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, canvas.height);
+        }
+        for (let y = 0; y < canvas.height; y += gridSize) {
+            ctx.moveTo(0, y);
+            ctx.lineTo(canvas.width, y);
+        }
+        ctx.stroke();
+        ctx.lineWidth = lineWidth.value;
+        slides[currentSlideIndex] = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    });
+
+    drawLinesButton.addEventListener('click', () => {
+        drawLinesMode = !drawLinesMode;
+        drawLinesButton.classList.toggle('active', drawLinesMode);
+    });
+
+    function setDrawingMode(mode) {
+        currentMode = mode;
+        document.querySelectorAll('.mode-button').forEach(btn => btn.classList.remove('active'));
+        if (mode === 'freehand') {
+            freehandModeButton.classList.add('active');
+        } else if (mode === 'connectPoints') {
+            connectPointsModeButton.classList.add('active');
+        }
+        clearPoints();
+    }
+
+    freehandModeButton.addEventListener('click', () => setDrawingMode('freehand'));
+    connectPointsModeButton.addEventListener('click', () => setDrawingMode('connectPoints'));
+
+    function applyRuler(x0, y0, x1, y1) {
+        if (!drawLinesMode) return { x: x1, y: y1 };
+        const dx = x1 - x0;
+        const dy = y1 - y0;
+        const absDx = Math.abs(dx);
+        const absDy = Math.abs(dy);
+        const tolerance = 0.3;
+
+        if (Math.abs(absDx - absDy) / Math.min(absDx, absDy) < tolerance) {
+            const signX = dx >= 0 ? 1 : -1;
+            const signY = dy >= 0 ? 1 : -1;
+            const length = Math.min(absDx, absDy);
+            return { x: x0 + signX * length, y: y0 + signY * length };
+        } else if (absDx > absDy) {
+            return { x: x1, y: y0 };
+        } else {
+            return { x: x0, y: y1 };
+        }
+    }
+
+    function addPointMarker(x, y) {
+        const marker = document.createElement('div');
+        marker.className = 'point-marker';
+        marker.style.left = x + 'px';
+        marker.style.top = y + 'px';
+        canvasContainer.appendChild(marker);
+        pointMarkers.push(marker);
+    }
+
+    function clearPoints() {
+        points = [];
+        pointMarkers.forEach(m => m.remove());
+        pointMarkers = [];
+    }
+
+    function getCanvasCoords(e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        let clientX, clientY;
+        if (e.touches) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
+        return {
+            x: (clientX - rect.left) * scaleX,
+            y: (clientY - rect.top) * scaleY
+        };
+    }
+
+    function startDrawing(e) {
+        e.preventDefault();
+        const pos = getCanvasCoords(e);
+        if (currentMode === 'freehand') {
+            isDrawing = true;
+            startX = pos.x;
+            startY = pos.y;
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+        } else if (currentMode === 'connectPoints') {
+            const x = pos.x;
+            const y = pos.y;
+            if (points.length > 2) {
+                const firstPoint = points[0];
+                const dist = Math.hypot(firstPoint.x - x, firstPoint.y - y);
+                if (dist < 20) {
+                    ctx.beginPath();
+                    ctx.moveTo(points[points.length - 1].x, points[points.length - 1].y);
+                    ctx.lineTo(firstPoint.x, firstPoint.y);
+                    ctx.stroke();
+                    slides[currentSlideIndex] = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    clearPoints();
+                    return;
+                }
+            }
+            points.push({ x, y });
+            addPointMarker(x, y);
+            if (points.length > 1) {
+                const prev = points[points.length - 2];
+                let adjusted = { x, y };
+                if (drawLinesMode) {
+                    adjusted = applyRuler(prev.x, prev.y, x, y);
+                    points[points.length - 1] = adjusted;
+                    const marker = pointMarkers[pointMarkers.length - 1];
+                    marker.style.left = adjusted.x + 'px';
+                    marker.style.top = adjusted.y + 'px';
+                }
+                ctx.beginPath();
+                ctx.moveTo(prev.x, prev.y);
+                ctx.lineTo(adjusted.x, adjusted.y);
+                ctx.stroke();
+                slides[currentSlideIndex] = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            }
+        }
+    }
+
+    function draw(e) {
+        if (currentMode !== 'freehand' || !isDrawing) return;
+        e.preventDefault();
+        const pos = getCanvasCoords(e);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.putImageData(slides[currentSlideIndex], 0, 0);
+        let x = pos.x;
+        let y = pos.y;
+        if (drawLinesMode) {
+            const adjusted = applyRuler(startX, startY, x, y);
+            x = adjusted.x;
+            y = adjusted.y;
+        }
+        ctx.lineTo(x, y);
+        ctx.stroke();
+    }
+
+    function stopDrawing(e) {
+        if (currentMode === 'freehand' && isDrawing) {
+            isDrawing = false;
+            ctx.closePath();
+            slides[currentSlideIndex] = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        }
+    }
+
+    backupSlideButton.addEventListener('click', () => {
+        backupSlide = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    });
+
+    restoreSlideButton.addEventListener('click', () => {
+        if (backupSlide) {
+            ctx.putImageData(backupSlide, 0, 0);
+            slides[currentSlideIndex] = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        }
+    });
+
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseout', stopDrawing);
+
+    canvas.addEventListener('touchstart', startDrawing, { passive: false });
+    canvas.addEventListener('touchmove', draw, { passive: false });
+    canvas.addEventListener('touchend', stopDrawing, { passive: false });
+
+    freehandModeButton.addEventListener('click', () => setDrawingMode('freehand'));
+    connectPointsModeButton.addEventListener('click', () => setDrawingMode('connectPoints'));
+
+    setDrawingMode('freehand');
+
+    toggleSlideButton.addEventListener('click', () => {
+        slide.classList.toggle('collapsed');
+        slide.classList.toggle('expanded');
+        toggleSlideButton.innerHTML = slide.classList.contains('collapsed') 
+            ? '<i class="fas fa-chevron-down"></i>' 
+            : '<i class="fas fa-chevron-up"></i>';
+    });
+</script>
+</body>
+</html>
