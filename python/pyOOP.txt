@@ -1,0 +1,84 @@
+1. Инкапсуляция
+Инкапсуляция — это механизм, который объединяет данные и методы, работающие с этими данными, в единое целое, называемое классом. В Python инкапсуляция достигается с помощью использования атрибутов и методов класса. Хотя Python не имеет строгой системы модификаторов доступа, соглашения о наименовании (например, использование одного или двух подчеркиваний) помогают обозначить, какие атрибуты и методы являются "приватными".
+
+Пример:
+
+python
+Run
+Copy code
+class BankAccount:
+    def __init__(self, initial_balance):
+        self.__balance = initial_balance  # Приватное поле
+
+    def deposit(self, amount):
+        if amount > 0:
+            self.__balance += amount
+
+    def withdraw(self, amount):
+        if amount > 0 and amount <= self.__balance:
+            self.__balance -= amount
+
+    def get_balance(self):
+        return self.__balance
+2. Наследование
+Наследование позволяет создавать новые классы на основе существующих. Новый класс (наследник) может наследовать свойства и методы родительского класса, а также добавлять свои собственные.
+
+Пример:
+
+python
+Run
+Copy code
+class SavingsAccount(BankAccount):
+    def __init__(self, initial_balance, interest_rate):
+        super().__init__(initial_balance)  # Вызов конструктора родительского класса
+        self.interest_rate = interest_rate
+
+    def apply_interest(self):
+        interest = self.get_balance() * self.interest_rate
+        self.deposit(interest)
+3. Полиморфизм
+Полиморфизм позволяет использовать один интерфейс для работы с разными типами объектов. В Python полиморфизм достигается через переопределение методов.
+
+Пример:
+
+python
+Run
+Copy code
+class Shape:
+    def draw(self):
+        print("Drawing a shape")
+
+class Circle(Shape):
+    def draw(self):
+        print("Drawing a circle")
+
+class Square(Shape):
+    def draw(self):
+        print("Drawing a square")
+
+def render(shape):
+    shape.draw()  # Вызов полиморфного метода
+4. Абстракция
+Абстракция позволяет выделить важные характеристики объекта и игнорировать несущественные. В Python это можно реализовать с помощью абстрактных классов и интерфейсов, используя модуль abc.
+
+Пример:
+
+python
+Run
+Copy code
+from abc import ABC, abstractmethod
+
+class AbstractShape(ABC):
+    @abstractmethod
+    def draw(self):
+        pass
+
+class Triangle(AbstractShape):
+    def draw(self):
+        print("Drawing a triangle")
+Заключение
+Объектно-ориентированное программирование в Python предоставляет мощные инструменты для создания гибких и поддерживаемых программных систем. Используя инкапсуляцию, наследование, полиморфизм и абстракцию, разработчики могут создавать сложные структуры данных и алгоритмы, которые легко расширять и модифицировать.
+
+Применение ООП в Python
+Объектно-ориентированное программирование в Python широко используется в различных областях, таких как разработка веб-приложений, создание графических интерфейсов, научные вычисления и машинное обучение. Благодаря своей простоте и гибкости, ООП в Python позволяет разработчикам быстро создавать и поддерживать сложные приложения.
+

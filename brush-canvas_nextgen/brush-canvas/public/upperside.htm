@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Компактная панель управления</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+        .control-panel {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            flex-wrap: wrap;
+            max-width: 100%;
+        }
+        .timer {
+            font-family: 'Courier New', monospace;
+            font-size: 24px; /* Увеличенный размер шрифта */
+            font-weight: bold;
+            min-width: 90px; /* Увеличенная минимальная ширина */
+            text-align: center;
+            background: #f8f8f8;
+            padding: 6px 10px; /* Увеличенные отступы */
+            border-radius: 4px;
+        }
+        button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+        }
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 3px rgba(0,0,0,0.2);
+        }
+        #startBtn { background: #4CAF50; }
+        #stopBtn { background: #f44336; }
+        #resetBtn { background: #2196F3; }
+        #screenshot { background: #FF9800; }
+        #randomStudent { background: #9C27B0; }
+        #loadLinkBtn { background: #607D8B; }
+        #openLinkBtn { background: #795548; }
+        
+        .file-input-container {
+            position: relative;
+            display: inline-block;
+            margin-left: 5px;
+        }
+        .file-input-label {
+            padding: 8px 12px;
+            background: #607D8B;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+        }
+        #studentsFile, #linksFile {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        .student-display {
+            font-weight: bold;
+            color: #333;
+            padding: 0 8px;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .links-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #linksSelect {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            min-width: 150px;
+        }
+    </style>
+</head>
+<body>
+    <div class="control-panel">
+        <div class="timer" id="time">00:00:00</div>
+        <button id="startBtn" title="Запустить таймер"><i class="fas fa-play"></i></button>
+        <button id="stopBtn" title="Остановить таймер"><i class="fas fa-stop"></i></button>
+        <button id="resetBtn" title="Сбросить таймер"><i class="fas fa-undo"></i></button>
+        
+        <div class="file-input-container">
+            <label class="file-input-label" title="Загрузить список учеников">
+                <i class="fas fa-users"></i>
+                <input type="file" id="studentsFile" accept=".txt,.csv">
+            </label>
+        </div>
+        <button id="randomStudent" title="Выбрать случайного ученика"><i class="fas fa-random"></i></button>
+        <div class="student-display" id="currentStudent">Нет данных</div>
+        
+        <button id="screenshot" title="Сделать скриншот"><i class="fas fa-camera"></i></button>
+        
+        <!-- Новые элементы для работы с ссылками -->
+        <div class="file-input-container">
+            <label class="file-input-label" title="Загрузить список ссылок">
+                <i class="fas fa-link"></i>
+                <input type="file" id="linksFile" accept=".txt,.csv">
+            </label>
+        </div>
+        
+        <div class="links-container">
+            <select id="linksSelect" title="Выберите ссылку">
+                <option value="">Выберите ссылку</option>
+            </select>
+            <button id="openLinkBtn" title="Открыть ссылку"><i class="fas fa-external-link-alt"></i></button>
+        </div>
+    </div>
+
+    <script>
+        // Таймер
+        const timeDisplay = document.getElementById('time');
+        let timer, seconds = 0, isRunning = false;
+        
+        // Список учеников
+        let students = [];
+        const studentsFileInput = document.getElementById('studentsFile');
+        const randomStudentBtn = document.getElementById('randomStudent');
+        const currentStudentDisplay = document.getElementById('currentStudent');
+        
+        // Список ссылок
+        let links = [];
+        const linksFileInput = document.getElementById('linksFile');
+        const linksSelect = document.getElementById('linksSelect');
+        const openLinkBtn = document.getElementById('openLinkBtn');
+        
+        function updateDisplay() {
+            const hours = String(Math.floor(seconds / 3600)).padStart(2, '0');
+            const minutes = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+            const secs = String(seconds % 60).padStart(2, '0');
+            timeDisplay.textContent = `${hours}:${minutes}:${secs}`;
+        }
+
+        // Управление таймером
+        document.getElementById('startBtn').addEventListener('click', () => {
+            if (!isRunning) {
+                isRunning = true;
+                timer = setInterval(() => {
+                    seconds++;
+                    updateDisplay();
+                }, 1000);
+            }
+        });
+
+        document.getElementById('stopBtn').addEventListener('click', () => {
+            if (isRunning) {
+                clearInterval(timer);
+                isRunning = false;
+            }
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            clearInterval(timer);
+            isRunning = false;
+            seconds = 0;
+            updateDisplay();
+        });
+
+        // Загрузка списка учеников
+        studentsFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const text = event.target.result;
+                    students = text.split('\n')
+                        .map(name => name.trim())
+                        .filter(name => name.length > 0);
+                    
+                    if (students.length > 0) {
+                        currentStudentDisplay.textContent = `Загружено: ${students.length}`;
+                        alert(`Успешно загружено ${students.length} учеников`);
+                    } else {
+                        currentStudentDisplay.textContent = 'Нет данных';
+                        alert('Файл не содержит имен учеников');
+                    }
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        // Выбор случайного ученика
+        randomStudentBtn.addEventListener('click', () => {
+            if (students.length > 0) {
+                const randomIndex = Math.floor(Math.random() * students.length);
+                currentStudentDisplay.textContent = students[randomIndex];
+                
+                // Создаем анимацию
+                currentStudentDisplay.style.transition = 'none';
+                currentStudentDisplay.style.opacity = '0';
+                setTimeout(() => {
+                    currentStudentDisplay.style.transition = 'opacity 0.5s';
+                    currentStudentDisplay.style.opacity = '1';
+                }, 10);
+            } else {
+                alert('Сначала загрузите список учеников');
+            }
+        });
+
+        // Скриншот всего экрана
+        document.getElementById('screenshot').addEventListener('click', async () => {
+            try {
+                // Запрашиваем разрешение на захват экрана
+                const stream = await navigator.mediaDevices.getDisplayMedia({
+                    video: {
+                        cursor: "never",
+                        displaySurface: "monitor"
+                    },
+                    audio: false
+                });
+                
+                // Создаем видео элемент для захвата
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                video.onloadedmetadata = () => {
+                    video.play();
+                    
+                    // Создаем canvas для сохранения
+                    const canvas = document.createElement('canvas');
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Ждем немного перед захватом
+                    setTimeout(() => {
+                        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                        stream.getTracks().forEach(track => track.stop());
+                        
+                        // Сохраняем изображение
+                        const link = document.createElement('a');
+                        link.download = `screenshot-${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.png`;
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+                    }, 100);
+                };
+            } catch (err) {
+                console.error("Ошибка при создании скриншота:", err);
+                alert("Не удалось сделать скриншот. Разрешите доступ к экрану.");
+            }
+        });
+
+        // Загрузка списка ссылок
+        linksFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const text = event.target.result;
+                    links = text.split('\n')
+                        .map(link => link.trim())
+                        .filter(link => link.length > 0 && (link.startsWith('http://') || link.startsWith('https://')));
+                    
+                    // Обновляем выпадающий список
+                    linksSelect.innerHTML = '<option value="">Выберите ссылку</option>';
+                    links.forEach(link => {
+                        const option = document.createElement('option');
+                        option.value = link;
+                        option.textContent = link.length > 30 ? link.substring(0, 27) + '...' : link;
+                        linksSelect.appendChild(option);
+                    });
+                    
+                    if (links.length > 0) {
+                        alert(`Успешно загружено ${links.length} ссылок`);
+                    } else {
+                        alert('Файл не содержит валидных ссылок (начинающихся с http:// или https://)');
+                    }
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        // Открытие выбранной ссылки в правом фрейме
+        openLinkBtn.addEventListener('click', () => {
+            const selectedLink = linksSelect.value;
+            if (selectedLink) {
+                try {
+                    // Отправляем команду родительскому окну для загрузки ссылки в правый фрейм
+                    window.parent.frames['нижний_правый'].location.href = selectedLink;
+                } catch (err) {
+                    console.error("Ошибка при открытии ссылки:", err);
+                    alert("Не удалось открыть ссылку. Убедитесь, что страница с фреймами загружена корректно.");
+                }
+            } else {
+                alert('Выберите ссылку из списка');
+            }
+        });
+
+        // Инициализация
+        updateDisplay();
+    </script>
+</body>
+</html>
